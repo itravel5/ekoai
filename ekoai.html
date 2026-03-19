@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EkoAI — Kişisel İklim Danışmanı</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b1a0d;
+    --bg2: #111f13;
+    --bg3: #172419;
+    --card: #1a2e1c;
+    --card2: #203323;
+    --accent: #74c365;
+    --accent2: #a8e09a;
+    --text: #e8f0e4;
+    --text2: #9eb89a;
+    --text3: #5a7a56;
+    --border: rgba(116,195,101,0.15);
+    --border2: rgba(116,195,101,0.3);
+    --red: #e07060;
+    --amber: #e8b040;
+    --green: #74c365;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(11,26,13,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: var(--text2); font-style: italic; font-size: 1rem; margin-left: 6px; }
+
+  .api-wrap {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .api-wrap label { font-size: 0.78rem; color: var(--text3); }
+
+  .api-wrap input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    width: 220px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .api-wrap input:focus { border-color: var(--accent); }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(116,195,101,0.1);
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    color: var(--accent2);
+    margin-bottom: 1.5rem;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 1rem;
+    letter-spacing: -0.03em;
+  }
+
+  .hero h1 em { color: var(--accent); font-style: italic; }
+
+  .hero p {
+    color: var(--text2);
+    font-size: 1.05rem;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+  }
+
+  .btn-start {
+    background: var(--accent);
+    color: #0b1a0d;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 36px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 30px rgba(116,195,101,0.25);
+  }
+
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 4px 40px rgba(116,195,101,0.4); }
+
+  .stats-row {
+    display: flex; justify-content: center; gap: 2.5rem;
+    margin-top: 3rem; padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat { text-align: center; }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--accent); }
+  .stat-lbl { font-size: 0.78rem; color: var(--text3); margin-top: 2px; }
+
+  /* FORM */
+  .form-container {
+    display: none;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .progress-bar {
+    display: flex; gap: 8px; margin-bottom: 2.5rem;
+  }
+
+  .prog-step {
+    flex: 1; height: 4px; border-radius: 4px;
+    background: var(--card2);
+    transition: background 0.4s;
+  }
+
+  .prog-step.active { background: var(--accent); }
+  .prog-step.done { background: rgba(116,195,101,0.4); }
+
+  .step { display: none; }
+  .step.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .step-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  }
+
+  .step h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--text);
+  }
+
+  .step-desc { color: var(--text2); font-size: 0.9rem; margin-bottom: 2rem; }
+
+  .field { margin-bottom: 1.5rem; }
+  .field label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 8px; }
+
+  .field input[type="number"],
+  .field select,
+  .field input[type="range"] {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border 0.2s;
+    appearance: none;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--bg2); }
+
+  .radio-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .radio-group.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .radio-opt {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.88rem;
+    text-align: center;
+    color: var(--text2);
+    user-select: none;
+  }
+
+  .radio-opt:hover { border-color: var(--border2); color: var(--text); }
+  .radio-opt.selected { border-color: var(--accent); background: rgba(116,195,101,0.1); color: var(--accent2); }
+
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-row input[type="range"] { flex: 1; padding: 0; height: 4px; cursor: pointer; accent-color: var(--accent); }
+  .range-val { font-weight: 600; color: var(--accent); min-width: 50px; text-align: right; font-size: 0.9rem; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 2rem; }
+
+  .btn-next {
+    flex: 1;
+    background: var(--accent);
+    color: #0b1a0d;
+    border: none; border-radius: var(--radius-sm);
+    padding: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .btn-next:hover { transform: translateY(-1px); }
+
+  .btn-back {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: var(--radius-sm);
+    padding: 14px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; cursor: pointer;
+    transition: border 0.2s;
+  }
+
+  .btn-back:hover { border-color: var(--border2); }
+
+  /* LOADING */
+  .loading-screen {
+    display: none;
+    text-align: center;
+    padding: 5rem 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .spinner {
+    width: 60px; height: 60px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-screen h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem; color: var(--text); margin-bottom: 0.5rem;
+  }
+
+  .loading-screen p { color: var(--text2); font-size: 0.9rem; }
+
+  .loading-dots span {
+    display: inline-block;
+    animation: blink 1.4s infinite;
+    font-size: 1.5rem; color: var(--accent);
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* RESULTS */
+  .results {
+    display: none;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 5rem;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .result-header { text-align: center; margin-bottom: 2.5rem; }
+
+  .result-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; color: var(--text); margin-bottom: 0.3rem;
+  }
+
+  .result-header p { color: var(--text2); }
+
+  /* SCORE CARD */
+  .score-card {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .grade-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 70px; height: 70px; border-radius: 50%;
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+    border: 2px solid;
+  }
+
+  .grade-A { background: rgba(116,195,101,0.15); border-color: var(--green); color: var(--green); }
+  .grade-B { background: rgba(168,224,154,0.12); border-color: #8dcf70; color: #8dcf70; }
+  .grade-C { background: rgba(232,176,64,0.12); border-color: var(--amber); color: var(--amber); }
+  .grade-D { background: rgba(224,112,96,0.12); border-color: var(--red); color: var(--red); }
+  .grade-F { background: rgba(200,60,60,0.12); border-color: #c84040; color: #c84040; }
+
+  .score-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3rem; color: var(--text);
+    line-height: 1;
+  }
+
+  .score-unit { font-size: 1rem; color: var(--text3); margin-bottom: 0.5rem; }
+
+  .score-desc { color: var(--text2); font-size: 0.88rem; }
+
+  /* BAR CHART */
+  .compare-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .compare-card h3 {
+    font-size: 0.9rem; color: var(--text2); margin-bottom: 1.2rem;
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;
+  }
+
+  .bar-row { margin-bottom: 12px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text2); margin-bottom: 4px; }
+  .bar-track { background: var(--bg3); border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+
+  /* TIPS */
+  .tips-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tips-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem; color: var(--text); margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .tip-item {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tip-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .tip-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(116,195,101,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+
+  .tip-text { font-size: 0.88rem; color: var(--text2); line-height: 1.5; }
+  .tip-text strong { color: var(--text); font-weight: 500; display: block; margin-bottom: 2px; }
+
+  .impact-pill {
+    display: inline-block;
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 100px;
+    font-weight: 600; margin-top: 4px;
+  }
+
+  .impact-high { background: rgba(116,195,101,0.15); color: var(--accent2); }
+  .impact-med { background: rgba(232,176,64,0.12); color: #e8b866; }
+  .impact-low { background: rgba(116,195,101,0.08); color: var(--text3); }
+
+  /* AI ANALYSIS */
+  .ai-card {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .ai-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem; color: var(--text); margin-bottom: 1rem;
+  }
+
+  .ai-text { font-size: 0.9rem; color: var(--text2); line-height: 1.75; white-space: pre-wrap; }
+
+  .btn-restart {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; cursor: pointer;
+    transition: border 0.2s, color 0.2s;
+    margin-top: 1rem;
+  }
+
+  .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(224,112,96,0.1);
+    border: 1px solid rgba(224,112,96,0.3);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    color: var(--red);
+    font-size: 0.88rem;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 1rem; flex-wrap: wrap; gap: 8px; }
+    .api-wrap input { width: 180px; }
+    .stats-row { gap: 1.5rem; }
+    .radio-group { grid-template-columns: 1fr; }
+    .radio-group.cols3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">EkoAI <span>iklim danışmanı</span></div>
+  <div class="api-wrap">
+    <label>API Anahtarı:</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." />
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="heroSection">
+  <div class="hero-badge">
+    <div class="dot"></div>
+    Yapay Zeka Destekli · Ücretsiz
+  </div>
+  <h1>Karbon ayak izini öğren,<br><em>gezegenini kurtar.</em></h1>
+  <p>Günlük alışkanlıklarını paylaş — AI senin için kişisel bir iklim analizi ve eylem planı oluştursun.</p>
+  <button class="btn-start" onclick="startForm()">Analizi Başlat →</button>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num">4 dk</div>
+      <div class="stat-lbl">Sürer</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">AI</div>
+      <div class="stat-lbl">Kişisel analiz</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">%100</div>
+      <div class="stat-lbl">Ücretsiz</div>
+    </div>
+  </div>
+</section>
+
+<!-- FORM -->
+<div class="form-container" id="formContainer">
+  <div class="progress-bar">
+    <div class="prog-step" id="p1"></div>
+    <div class="prog-step" id="p2"></div>
+    <div class="prog-step" id="p3"></div>
+    <div class="prog-step" id="p4"></div>
+  </div>
+
+  <!-- STEP 1: Ulaşım -->
+  <div class="step" id="step1">
+    <div class="step-label">Adım 1 / 4</div>
+    <h2>Ulaşım alışkanlıkların</h2>
+    <p class="step-desc">Haftalık yolculuklarını düşün.</p>
+
+    <div class="field">
+      <label>Araç kullanıyor musun?</label>
+      <div class="radio-group" id="carType">
+        <div class="radio-opt" data-val="none">Hayır, araç yok</div>
+        <div class="radio-opt" data-val="electric">Elektrikli araç</div>
+        <div class="radio-opt" data-val="hybrid">Hibrit araç</div>
+        <div class="radio-opt" data-val="petrol">Benzinli/dizel</div>
+      </div>
+    </div>
+
+    <div class="field" id="kmField">
+      <label>Haftada kaç km sürüyorsun? <span id="kmVal" style="color:var(--accent)">100 km</span></label>
+      <div class="range-row">
+        <input type="range" min="0" max="1000" step="10" value="100" id="weeklyKm"
+          oninput="document.getElementById('kmVal').textContent=this.value+' km'">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Yılda kaç kez uçuş yapıyorsun?</label>
+      <div class="radio-group cols3" id="flights">
+        <div class="radio-opt selected" data-val="0">Hiç</div>
+        <div class="radio-opt" data-val="1">1-2</div>
+        <div class="radio-opt" data-val="3">3-5</div>
+        <div class="radio-opt" data-val="6">6-10</div>
+        <div class="radio-opt" data-val="12">10+</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Toplu taşıma kullanım sıklığı?</label>
+      <div class="radio-group" id="publicTransport">
+        <div class="radio-opt" data-val="never">Hiç kullanmam</div>
+        <div class="radio-opt" data-val="rarely">Nadiren</div>
+        <div class="radio-opt" data-val="often">Sık sık</div>
+        <div class="radio-opt" data-val="always">Her gün</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-next" onclick="nextStep(2)">Devam Et →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Beslenme -->
+  <div class="step" id="step2">
+    <div class="step-label">Adım 2 / 4</div>
+    <h2>Beslenme tarzın</h2>
+    <p class="step-desc">Yediğimiz yiyeceklerin üretimi büyük iklim etkisi yaratır.</p>
+
+    <div class="field">
+      <label>Beslenme tarzını en iyi hangisi tanımlar?</label>
+      <div class="radio-group" id="diet">
+        <div class="radio-opt" data-val="vegan">Vegan</div>
+        <div class="radio-opt" data-val="vegetarian">Vejetaryen</div>
+        <div class="radio-opt" data-val="flexitarian">Az et yiyen</div>
+        <div class="radio-opt" data-val="omnivore">Her şey yiyen</div>
+        <div class="radio-opt" data-val="heavy_meat">Çok et tüketiyorum</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Yerel/mevsimsel ürün tüketiyor musun?</label>
+      <div class="radio-group" id="local">
+        <div class="radio-opt" data-val="always">Evet, çoğunlukla</div>
+        <div class="radio-opt" data-val="sometimes">Bazen</div>
+        <div class="radio-opt" data-val="rarely">Nadiren</div>
+        <div class="radio-opt" data-val="never">Hayır</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Haftada ne kadar yiyecek israf edersin?</label>
+      <div class="radio-group cols3" id="waste">
+        <div class="radio-opt" data-val="none">Neredeyse hiç</div>
+        <div class="radio-opt" data-val="low">Az</div>
+        <div class="radio-opt" data-val="medium">Orta</div>
+        <div class="radio-opt" data-val="high">Fazla</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(1)">← Geri</button>
+      <button class="btn-next" onclick="nextStep(3)">Devam Et →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Enerji -->
+  <div class="step" id="step3">
+    <div class="step-label">Adım 3 / 4</div>
+    <h2>Ev enerjisi</h2>
+    <p class="step-desc">Evde kullandığın enerji kaynakları ne kadar temiz?</p>
+
+    <div class="field">
+      <label>Konutun tipi nedir?</label>
+      <div class="radio-group" id="homeType">
+        <div class="radio-opt" data-val="apartment_small">Küçük daire</div>
+        <div class="radio-opt" data-val="apartment_large">Büyük daire</div>
+        <div class="radio-opt" data-val="house_small">Küçük ev</div>
+        <div class="radio-opt" data-val="house_large">Büyük müstakil ev</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Isınma sistemi nedir?</label>
+      <div class="radio-group" id="heating">
+        <div class="radio-opt" data-val="doğalgaz">Doğalgaz</div>
+        <div class="radio-opt" data-val="merkezi">Merkezi sistem</div>
+        <div class="radio-opt" data-val="elektrik">Elektrikli ısıtma</div>
+        <div class="radio-opt" data-val="yenilenebilir">Isı pompası/güneş</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Yenilenebilir enerji kullanıyor musun?</label>
+      <div class="radio-group" id="renewable">
+        <div class="radio-opt" data-val="yes">Evet (güneş paneli vb.)</div>
+        <div class="radio-opt" data-val="green_tariff">Yeşil tarife aldım</div>
+        <div class="radio-opt" data-val="no">Hayır</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Kaç kişilik hanede yaşıyorsun? <span id="personVal" style="color:var(--accent)">2 kişi</span></label>
+      <div class="range-row">
+        <input type="range" min="1" max="8" step="1" value="2" id="persons"
+          oninput="document.getElementById('personVal').textContent=this.value+' kişi'">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(2)">← Geri</button>
+      <button class="btn-next" onclick="nextStep(4)">Devam Et →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Tüketim -->
+  <div class="step" id="step4">
+    <div class="step-label">Adım 4 / 4</div>
+    <h2>Tüketim alışkanlıkları</h2>
+    <p class="step-desc">Son olarak alışveriş ve tüketim alışkanlıkların.</p>
+
+    <div class="field">
+      <label>Giysi/elektronik alışverişin sıklığı?</label>
+      <div class="radio-group" id="shopping">
+        <div class="radio-opt" data-val="minimal">Çok az / ikinci el</div>
+        <div class="radio-opt" data-val="moderate">Orta düzeyde</div>
+        <div class="radio-opt" data-val="frequent">Sık sık</div>
+        <div class="radio-opt" data-val="very_frequent">Fast fashion hayranıyım</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Atık yönetimin nasıl?</label>
+      <div class="radio-group" id="recycling">
+        <div class="radio-opt" data-val="all">Ayrıştırıp geri dönüşüm</div>
+        <div class="radio-opt" data-val="some">Biraz geri dönüşüm</div>
+        <div class="radio-opt" data-val="none">Hepsini çöpe atıyorum</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Dijital yaşam (streaming, cloud vb.) kullanımın?</label>
+      <div class="radio-group" id="digital">
+        <div class="radio-opt" data-val="low">Az (birkaç saat/gün)</div>
+        <div class="radio-opt" data-val="medium">Orta (4-8 saat/gün)</div>
+        <div class="radio-opt" data-val="high">Yoğun (8+ saat/gün)</div>
+      </div>
+    </div>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(3)">← Geri</button>
+      <button class="btn-next" onclick="analyzeCarbon()" id="analyzeBtn">🌍 Analiz Et →</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <h3>AI analiz yapıyor</h3>
+  <p>Verilerini işliyor, karbon ayak izini hesaplıyor<br>ve kişisel eylem planını hazırlıyor...</p>
+  <div class="loading-dots" style="margin-top:1.5rem">
+    <span>●</span><span>●</span><span>●</span>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results" id="resultsSection">
+  <div class="result-header">
+    <h2>Analiz Tamamlandı</h2>
+    <p id="resultSubtitle">İşte kişisel iklim raporun</p>
+  </div>
+
+  <div class="score-card">
+    <div class="grade-badge" id="gradeBadge">?</div>
+    <div class="score-num" id="scoreNum">—</div>
+    <div class="score-unit">kg CO₂ / yıl (tahmini)</div>
+    <div class="score-desc" id="scoreDesc">—</div>
+  </div>
+
+  <div class="compare-card">
+    <h3>Küresel Karşılaştırma</h3>
+    <div class="bar-row">
+      <div class="bar-label"><span>Senin ayak izin</span><span id="myBar">—</span></div>
+      <div class="bar-track"><div class="bar-fill" id="myBarFill" style="width:0%;background:var(--accent)"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>Türkiye ortalaması</span><span>~6.000 kg</span></div>
+      <div class="bar-track"><div class="bar-fill" id="trBarFill" style="width:0%;background:#5a9a50"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>Dünya ortalaması</span><span>~4.500 kg</span></div>
+      <div class="bar-track"><div class="bar-fill" id="worldBarFill" style="width:0%;background:var(--text3)"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>1.5°C hedefi (2030)</span><span>~2.500 kg</span></div>
+      <div class="bar-track"><div class="bar-fill" id="targetBarFill" style="width:0%;background:#3a6e34"></div></div>
+    </div>
+  </div>
+
+  <div class="ai-card">
+    <h3>🤖 AI Analizi</h3>
+    <div class="ai-text" id="aiAnalysis">Yükleniyor...</div>
+  </div>
+
+  <div class="tips-card">
+    <h3>🌱 Kişisel Eylem Planın</h3>
+    <div id="tipsList">Yükleniyor...</div>
+  </div>
+
+  <button class="btn-restart" onclick="restart()">← Yeni Analiz Yap</button>
+</div>
+
+<script>
+let currentStep = 1;
+let userData = {};
+
+function startForm() {
+  document.getElementById('heroSection').style.display = 'none';
+  document.getElementById('formContainer').style.display = 'block';
+  goStep(1);
+}
+
+function getSelected(groupId) {
+  const el = document.querySelector(`#${groupId} .radio-opt.selected`);
+  return el ? el.dataset.val : null;
+}
+
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+
+  document.querySelectorAll('.prog-step').forEach((p, i) => {
+    p.classList.remove('active', 'done');
+    if (i + 1 < n) p.classList.add('done');
+    if (i + 1 === n) p.classList.add('active');
+  });
+
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep(n) {
+  goStep(n);
+}
+
+// Radio select logic
+document.querySelectorAll('.radio-group').forEach(group => {
+  group.querySelectorAll('.radio-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      group.querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+});
+
+function gatherData() {
+  return {
+    carType: getSelected('carType'),
+    weeklyKm: document.getElementById('weeklyKm').value,
+    flights: getSelected('flights'),
+    publicTransport: getSelected('publicTransport'),
+    diet: getSelected('diet'),
+    localFood: getSelected('local'),
+    foodWaste: getSelected('waste'),
+    homeType: getSelected('homeType'),
+    heating: getSelected('heating'),
+    renewable: getSelected('renewable'),
+    persons: document.getElementById('persons').value,
+    shopping: getSelected('shopping'),
+    recycling: getSelected('recycling'),
+    digital: getSelected('digital'),
+  };
+}
+
+function estimateCarbon(d) {
+  let co2 = 0;
+
+  // Transport
+  const carMultiplier = {none:0, electric:0.1, hybrid:0.12, petrol:0.21}[d.carType] || 0.21;
+  co2 += parseFloat(d.weeklyKm) * 52 * carMultiplier;
+
+  const flightFactor = {0:0, 1:500, 3:1800, 6:3500, 12:6000}[d.flights] || 0;
+  co2 += flightFactor;
+
+  const ptBonus = {never:0, rarely:200, often:-200, always:-400}[d.publicTransport] || 0;
+  co2 += ptBonus;
+
+  // Diet
+  const dietBase = {vegan:1100, vegetarian:1500, flexitarian:1900, omnivore:2500, heavy_meat:3300}[d.diet] || 2500;
+  co2 += dietBase;
+
+  if (d.localFood === 'always') co2 -= 200;
+  if (d.foodWaste === 'high') co2 += 300;
+  if (d.foodWaste === 'none') co2 -= 100;
+
+  // Home energy
+  const homeBase = {apartment_small:1200, apartment_large:2000, house_small:2400, house_large:4000}[d.homeType] || 2000;
+  const heatingMult = {doğalgaz:1.0, merkezi:0.85, elektrik:0.9, yenilenebilir:0.4}[d.heating] || 1.0;
+  const persons = parseInt(d.persons);
+  co2 += (homeBase * heatingMult) / persons;
+
+  if (d.renewable === 'yes') co2 -= 500;
+  if (d.renewable === 'green_tariff') co2 -= 200;
+
+  // Consumption
+  const shopFactor = {minimal:300, moderate:700, frequent:1400, very_frequent:2200}[d.shopping] || 700;
+  co2 += shopFactor;
+
+  if (d.recycling === 'none') co2 += 200;
+  if (d.recycling === 'all') co2 -= 150;
+
+  const digitalFactor = {low:50, medium:150, high:300}[d.digital] || 150;
+  co2 += digitalFactor;
+
+  return Math.round(co2);
+}
+
+function getGrade(co2) {
+  if (co2 < 2500) return 'A';
+  if (co2 < 4000) return 'B';
+  if (co2 < 6000) return 'C';
+  if (co2 < 9000) return 'D';
+  return 'F';
+}
+
+async function analyzeCarbon() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const errBox = document.getElementById('errorBox');
+  errBox.style.display = 'none';
+
+  if (!apiKey) {
+    errBox.textContent = 'Lütfen header\'daki API Anahtarı alanına Anthropic API anahtarınızı girin. (https://console.anthropic.com adresinden alabilirsin)';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  userData = gatherData();
+  const co2 = estimateCarbon(userData);
+  const grade = getGrade(co2);
+
+  // Hide form, show loading
+  document.getElementById('formContainer').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'block';
+  window.scrollTo({ top: 0 });
+
+  const prompt = `Sen bir iklim ve sürdürülebilirlik uzmanısın. Aşağıda bir kullanıcının yıllık karbon ayak izi verisi var.
+
+Tahmini yıllık karbon ayak izi: ${co2} kg CO₂
+
+Kullanıcı verileri:
+- Araç: ${userData.carType} (haftada ${userData.weeklyKm} km)
+- Yıllık uçuş: ${userData.flights} kez
+- Toplu taşıma: ${userData.publicTransport}
+- Beslenme: ${userData.diet}
+- Yerel/mevsimsel ürün: ${userData.localFood}
+- Yiyecek israfı: ${userData.foodWaste}
+- Konut: ${userData.homeType}, ${userData.heating} ısınma
+- Yenilenebilir enerji: ${userData.renewable}
+- Hane kişi sayısı: ${userData.persons}
+- Alışveriş alışkanlığı: ${userData.shopping}
+- Geri dönüşüm: ${userData.recycling}
+- Dijital kullanım: ${userData.digital}
+
+Lütfen JSON formatında yanıt ver (kesinlikle başka metin ekleme, sadece JSON):
+{
+  "summary": "2-3 cümle kişisel analiz özeti (ikinci şahıs, sen diye hitap et, samimi ve motive edici ol)",
+  "tips": [
+    {"icon": "🚗", "title": "Kısa başlık", "detail": "Spesifik, uygulanabilir öneri", "impact": "high/med/low"},
+    {"icon": "🥗", "title": "Kısa başlık", "detail": "Spesifik, uygulanabilir öneri", "impact": "high/med/low"},
+    {"icon": "💡", "title": "Kısa başlık", "detail": "Spesifik, uygulanabilir öneri", "impact": "high/med/low"},
+    {"icon": "🛍️", "title": "Kısa başlık", "detail": "Spesifik, uygulanabilir öneri", "impact": "high/med/low"},
+    {"icon": "🌱", "title": "Kısa başlık", "detail": "Spesifik, uygulanabilir öneri", "impact": "high/med/low"}
+  ]
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error?.message || 'API hatası');
+    }
+
+    const raw = data.content[0].text.trim();
+    const parsed = JSON.parse(raw.replace(/^```json|```$/g, '').trim());
+
+    showResults(co2, grade, parsed);
+  } catch (err) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('formContainer').style.display = 'block';
+    goStep(4);
+    errBox.textContent = 'Hata: ' + err.message + ' — API anahtarını kontrol et.';
+    errBox.style.display = 'block';
+  }
+}
+
+function showResults(co2, grade, aiData) {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Score
+  const badge = document.getElementById('gradeBadge');
+  badge.textContent = grade;
+  badge.className = 'grade-badge grade-' + grade;
+  document.getElementById('scoreNum').textContent = co2.toLocaleString('tr-TR');
+  document.getElementById('myBar').textContent = co2.toLocaleString('tr-TR') + ' kg';
+
+  const descriptions = {
+    A: 'Harika! İklim dostu bir yaşam sürüyorsun. Dünya ortalamalarının çok altındasın.',
+    B: 'İyi iş! Ortalamanın altındasın ama hâlâ gelişme payın var.',
+    C: 'Ortalama civarındasın. Birkaç değişiklikle büyük fark yaratabilirsin.',
+    D: 'Ortalamanın üzerisindesin. Acil aksiyon zamanı!',
+    F: 'Yüksek karbon ayak izi. Ama endişelenme — AI önerileriyle büyük düşüş mümkün!'
+  };
+
+  document.getElementById('scoreDesc').textContent = descriptions[grade];
+  document.getElementById('aiAnalysis').textContent = aiData.summary;
+
+  // Bar chart
+  const max = Math.max(co2, 6000, 4500, 2500, 10000);
+  setTimeout(() => {
+    document.getElementById('myBarFill').style.width = Math.min((co2/max)*100, 100) + '%';
+    document.getElementById('trBarFill').style.width = (6000/max*100) + '%';
+    document.getElementById('worldBarFill').style.width = (4500/max*100) + '%';
+    document.getElementById('targetBarFill').style.width = (2500/max*100) + '%';
+  }, 200);
+
+  // Tips
+  const impactLabel = {high: 'Yüksek etki', med: 'Orta etki', low: 'Düşük etki'};
+  const impactClass = {high: 'impact-high', med: 'impact-med', low: 'impact-low'};
+
+  const tipsList = document.getElementById('tipsList');
+  tipsList.innerHTML = aiData.tips.map(t => `
+    <div class="tip-item">
+      <div class="tip-icon">${t.icon}</div>
+      <div class="tip-text">
+        <strong>${t.title}</strong>
+        ${t.detail}
+        <div><span class="impact-pill ${impactClass[t.impact]}">${impactLabel[t.impact]}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function restart() {
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('heroSection').style.display = 'block';
+
+  document.querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('weeklyKm').value = 100;
+  document.getElementById('kmVal').textContent = '100 km';
+  document.getElementById('persons').value = 2;
+  document.getElementById('personVal').textContent = '2 kişi';
+  document.getElementById('flights').querySelector('[data-val="0"]').classList.add('selected');
+  document.getElementById('errorBox').style.display = 'none';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
